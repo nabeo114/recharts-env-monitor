@@ -31,6 +31,7 @@ const App: React.FC = () => {
         |> filter(fn: (r) => r._measurement == "ac_remote" and r.client_id == "ESP32Client-4f1da0d8")
         |> filter(fn: (r) => r._field == "${field}")
         |> aggregateWindow(every: 5m, fn: mean)
+        |> filter(fn: (r) => exists r._value)
         |> yield(name: "mean")
     `;
 
@@ -143,7 +144,7 @@ const App: React.FC = () => {
         <>
         {/* 最終更新時間の表示 */}
         <p style={{ textAlign: 'right', fontStyle: 'italic', marginBottom: '20px' }}>
-          Updated at: {temperatureData.length > 0 
+          Updated at {temperatureData.length > 0 
             ? new Date(temperatureData[temperatureData.length - 1].time).toLocaleString() 
             : 'N/A'}
         </p>
