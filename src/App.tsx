@@ -31,7 +31,6 @@ const App: React.FC = () => {
         |> filter(fn: (r) => r._measurement == "ac_remote" and r.client_id == "ESP32Client-4f1da0d8")
         |> filter(fn: (r) => r._field == "${field}")
         |> aggregateWindow(every: 5m, fn: mean)
-        |> filter(fn: (r) => exists r._value)
         |> yield(name: "mean")
     `;
 
@@ -41,10 +40,17 @@ const App: React.FC = () => {
         // クエリの各行を処理する
         next: (row, tableMeta) => {
           const obj = tableMeta.toObject(row); // 行データをオブジェクトに変換
-          results.push({
-            time: new Date(obj._time).getTime(), // 時間をUNIXタイムスタンプに変換
-            value: obj._value, // 値を取得
-          });
+          // _value の存在を確認し、存在しない場合は value を設定しない
+          if (obj._value != null) {
+            results.push({
+              time: new Date(obj._time).getTime(), // 時間をUNIXタイムスタンプに変換
+              value: obj._value,
+            });
+          } else {
+            results.push({
+              time: new Date(obj._time).getTime(), // 時間をUNIXタイムスタンプに変換
+            } as ChartData); // TypeScript の型安全を維持
+          }
         },
         // エラーが発生した場合の処理
         error: (err) => {
