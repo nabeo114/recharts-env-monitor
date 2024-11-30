@@ -95,8 +95,15 @@ const App: React.FC = () => {
   // 最新のデータ値を取得する関数
   const getLatestValue = (data: ChartData[]) => {
     if (data.length === 0) return 'N/A'; // データがない場合のフォールバック値
-    const latestData = data[data.length - 1]; // 最新のデータを取得
-    return latestData.value != null ? latestData.value.toFixed(1) : 'N/A'; // 値を安全に確認
+    // 最新のデータを逆順に探索
+    for (let i = data.length - 1; i >= 0; i--) {
+      const value = data[i].value;
+      if (value != null) {
+        return value.toFixed(1); // 値を見つけたら小数点1桁で返す
+      }
+    }
+
+    return 'N/A'; // すべての値がnullの場合
   };
 
   // グラフの描画
@@ -107,30 +114,41 @@ const App: React.FC = () => {
         <h2 style={{ fontSize: '20px'}}>{title}</h2>
         {latestValue !== 'N/A' ? (
           <p style={{ fontSize: '24px', fontWeight: 'bold', textAlign: 'center', marginBottom: '20px', backgroundColor: fillColor, padding: '10px', borderRadius: '8px' }}>
-            {latestValue} {unit}
+            {latestValue}{unit}
           </p>
         ) : (
           <p style={{ textAlign: 'center', fontStyle: 'italic' }}>No data available</p> // データがない場合の表示
         )}
         {/* グラフの描画 */}
         <ResponsiveContainer width="100%" height={400}>
-          <AreaChart data={data}>
+          <AreaChart data={data} margin={{ left: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="time"
               type="number"
               domain={['dataMin', 'dataMax']}
-              tickFormatter={(tick) =>
-                new Date(tick).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) // 時分のみ表示
-              }
+              tickFormatter={(tick) => {
+                const date = new Date(tick);
+                return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+              }}
             />
-            <YAxis 
+            <YAxis
               domain={['auto', 'auto']} 
-              tickFormatter={(value) => `${value} ${unit}`} // 単位を付けて表示
+              tickFormatter={(value) => `${value}${unit}`} // 単位を付けて表示
             />
             <Tooltip
-              labelFormatter={(value) => new Date(value).toLocaleTimeString()} // 時間をフォーマットして表示
-              formatter={(value: number) => `${value.toFixed(1)} ${unit}`} // 値を1桁に丸めて表示
+              labelFormatter={(value) => {
+                const date = new Date(value);
+                return date.toLocaleString('ja-JP', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                }).replace(/\//g, '-'); // 日本の年月日形式をハイフン区切りに変更
+              }}
+              formatter={(value: number) => `${value.toFixed(1)}${unit}`} // 値を1桁に丸めて表示
             />
             <Area type="monotone" dataKey="value" stroke={color} fill={fillColor} />
           </AreaChart>
@@ -151,7 +169,14 @@ const App: React.FC = () => {
         {/* 最終更新時間の表示 */}
         <p style={{ textAlign: 'right', fontStyle: 'italic', marginBottom: '20px' }}>
           Updated at {temperatureData.length > 0 
-            ? new Date(temperatureData[temperatureData.length - 1].time).toLocaleString() 
+            ? new Date(temperatureData[temperatureData.length - 1].time).toLocaleString('ja-JP', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+              }) 
             : 'N/A'}
         </p>
         {/* 各グラフを横並びで表示 */}
