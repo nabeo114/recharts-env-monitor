@@ -4,7 +4,7 @@ const webpack = require('webpack');
 const dotenv = require('dotenv');
 
 // .envファイルを読み込む
-const env = dotenv.config().parsed;
+const env = dotenv.config().parsed|| {};
 
 // 環境変数をDefinePlugin用に変換
 const envKeys = Object.keys(env).reduce((prev, next) => {
@@ -13,6 +13,7 @@ const envKeys = Object.keys(env).reduce((prev, next) => {
 }, {});
 
 module.exports = {
+  mode: 'development',
   entry: './src/index.tsx',
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -21,27 +22,17 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
   },
+  devtool: 'inline-source-map',
+  cache: {
+    type: 'filesystem',
+  },
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
-        use: 'ts-loader',
+        test: /\.(js|jsx|ts|tsx)$/,
+        use: 'babel-loader',
         exclude: /node_modules/,
-      },
-      {
-        test: /\.jsx?$/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ['@babel/preset-env', '@babel/preset-react'],
-          },
-        },
-        exclude: /node_modules/,
-      },
-      {
-        test: /\.css$/,
-        use: ['style-loader', 'css-loader'],
-      },
+      }
     ],
   },
   devServer: {
